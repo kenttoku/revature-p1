@@ -1,7 +1,18 @@
 #!/bin/bash
 
+# Validate Arguments
+validate_arg () {
+  arg=$1
+  arg_name=$2
+
+  if [ -z "$arg" ]; then
+    echo "Missing argument '$arg_name'." 1>&2
+    exit 1
+  fi
+}
+
 # Create VM
-create () {
+create_vm () {
   # Variables
   vm_name=$1
   resource_group=$2
@@ -9,6 +20,13 @@ create () {
   image=$4
   size=$5
   admin_username=$6
+
+  validate_arg "$vm_name" "vm_name"
+  validate_arg "$resource_group" "resource_group"
+  validate_arg "$location" "location"
+  validate_arg "$image" "image"
+  validate_arg "$size" "size"
+  validate_arg "$admin_username" "admin_username"
 
   # Check for resource group. If resource group doesn't exist, create it
   echo "Validating resource group."
@@ -40,7 +58,7 @@ create () {
 
 # Main
 main () {
-  echo $1 $2 $3
+  create_vm "$@"
 }
 
 main "$@"
