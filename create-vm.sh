@@ -20,6 +20,7 @@ create_vm () {
   image=$4
   size=$5
   admin_username=$6
+  disk_name=${vm_name}disk
 
   validate_arg "$vm_name" "vm_name"
   validate_arg "$resource_group" "resource_group"
@@ -34,6 +35,7 @@ create_vm () {
     echo "Resource group does not exist. Creating."
     az group create -n "$resource_group" -l "$location"
   fi
+  echo "Resource group validated."
 
   # Checking existing VM for duplicates
   echo "Validating VM name."
@@ -43,6 +45,11 @@ create_vm () {
   fi
   echo "VM name validated."
 
+  ## Create Disk
+  echo "Creating Disk"
+  az disk create -n "$disk_name" -g "$resource_group" --os-type Linux --size 10
+  echo "Disk Created"
+
   # Create VM
   echo "Creating VM."
   az vm create \
@@ -51,6 +58,7 @@ create_vm () {
     --image "$image" \
     --size "$size" \
     --admin-username "$admin_username" \
+    --attach-data-disk "$disk_name" \
     --generate-ssh-keys \
     --custom-data ./cloud-init.txt
   echo "VM created."
@@ -58,7 +66,16 @@ create_vm () {
 
 # Main
 main () {
+  # Variables
+  vm_name=$1
+  resource_group=$2
+  location=$3
+  image=$4
+  size=$5
+  admin_username=$6
+
   create_vm "$@"
+  az vm open-port -g "$resource_group" -n "$vm_name" --port 80
 }
 
 main "$@"
