@@ -101,9 +101,6 @@ main () {
 
   # Create VM w/Disk
   create_vm "$resource_group" "$vm_name" "$image" "$size" "$admin_username" "$disk_name"
-
-
-  az vm open-port -g "$resource_group" -n "$vm_name" --port 80
 }
 
 main "$@"
