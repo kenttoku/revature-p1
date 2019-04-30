@@ -1,6 +1,20 @@
 #cloud-config
-package_update: true
-package_upgrade: true
+# package_update: true
+# package_upgrade: true
 packages:
   - nodejs
   - npm
+mounts:
+  - [ sdc, /media, "ext4", "defaults", "0", "0" ]
+runcmd:
+  - mkfs -t ext4 /dev/sdc
+  - mkdir /media/app
+  - mount /dev/sdc /media/app
+  - chown -R kent:kent /media/app
+  - chmod -R 777 /media/app
+  - cd /home/kent
+  - mkdir app
+  - cd app
+  - npm init -y
+  - npm install --save express multer morgan
+  - mkdir /home/kent/test
