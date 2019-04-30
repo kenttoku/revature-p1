@@ -1,9 +1,12 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const morgan = require('morgan');
 const multer = require('multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
 const app = express();
 const PORT = 8080;
+const directoryPath = path.join(__dirname, '/uploads/images');
 
 app.use(morgan('dev'));
 app.use(express.json());
@@ -17,8 +20,15 @@ app.post('/upload', upload.single('photo'), (req, res) => {
   }
 });
 
-app.get('/pictures', (req, res) => {
-  res.sendFile('/Users/kent/revature-p1/img-drive/uploads/images/093256e7e9dd532222ece1139a24d006');
+// sends back an array with all the image ids
+app.get('/images', (req, res) => {
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      return res.json([]);
+    }
+    console.log(files);
+    return res.json(files);
+  });
 });
 
 // eslint-disable-next-line no-console

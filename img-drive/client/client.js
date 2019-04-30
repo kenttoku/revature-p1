@@ -36,6 +36,15 @@ function submitImage (e) {
 const preview = document.querySelector('.preview');
 const input = document.querySelector('input');
 const form = document.querySelector('form');
+const gallery = document.querySelector('#gallery');
 
 input.addEventListener('change', updateImageDisplay);
 form.addEventListener('submit', submitImage);
+
+if (gallery) {
+  fetch('/images')
+    .then(res => res.json())
+    .then(res => res.forEach((image, index) => {
+      console.log(image);
+    }));
+}
