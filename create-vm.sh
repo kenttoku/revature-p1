@@ -11,31 +11,53 @@ validate_arg () {
   fi
 }
 
-# Create VM
-create_vm () {
-  # Variables
-  vm_name=$1
-  resource_group=$2
-  location=$3
-  image=$4
-  size=$5
-  admin_username=$6
-  disk_name=${vm_name}disk
+# Check for resource group. If resource group doesn't exist, create it
+check_resource_group () {
+  resource_group=$1
+  location=$2
 
-  validate_arg "$vm_name" "vm_name"
   validate_arg "$resource_group" "resource_group"
   validate_arg "$location" "location"
-  validate_arg "$image" "image"
-  validate_arg "$size" "size"
-  validate_arg "$admin_username" "admin_username"
 
-  # Check for resource group. If resource group doesn't exist, create it
   echo "Validating resource group."
   if [ "$(az group exists --name "$resource_group")" = "false" ]; then
     echo "Resource group does not exist. Creating."
     az group create -n "$resource_group" -l "$location"
   fi
   echo "Resource group validated."
+}
+
+# Create Disk
+create_disk () {
+  resource_group=$1
+  disk_name=$2
+  disk_size=$3
+
+  validate_arg "$resource_group" "resource_group"å
+  validate_arg "$vm_name" "vm_name"
+  validate_arg "$disk_size" "disk_size"
+
+  echo "Creating Disk"
+  az disk create -n "$disk_name" -g "$resource_group" --os-type Linux --size "$disk_size"
+  echo "Disk Created"
+}
+
+# Create VM
+create_vm () {
+  # Variables
+  resource_group=$1
+  vm_name=$2
+  image=$3
+  size=$4
+  admin_username=$5
+  disk_name=$6
+
+  validate_arg "$resource_group" "resource_group"
+  validate_arg "$vm_name" "vm_name"
+  validate_arg "$image" "image"
+  validate_arg "$size" "size"
+  validate_arg "$admin_username" "admin_username"
+  validate_arg "$disk_name" "disk_name"
 
   # Checking existing VM for duplicates
   echo "Validating VM name."
@@ -44,11 +66,6 @@ create_vm () {
     exit 1
   fi
   echo "VM name validated."
-
-  ## Create Disk
-  echo "Creating Disk"
-  az disk create -n "$disk_name" -g "$resource_group" --os-type Linux --size 10
-  echo "Disk Created"
 
   # Create VM
   echo "Creating VM."
@@ -67,14 +84,25 @@ create_vm () {
 # Main
 main () {
   # Variables
-  vm_name=$1
-  resource_group=$2
+  resource_group=$1
+  vm_name=$2
   location=$3
   image=$4
   size=$5
   admin_username=$6
+  disk_name=${vm_name}disk
+  disk_size=10
 
-  create_vm "$@"
+  # Check Resource Group
+  check_resource_group "$resource_group" "$location"
+
+  # Create Disk
+  create_disk "$resource_group" "$disk_name" "$disk_size"
+
+  # Create VM w/Disk
+  create_vm "$resource_group" "$vm_name" "$image" "$size" "$admin_username" "$disk_name"
+
+
   az vm open-port -g "$resource_group" -n "$vm_name" --port 80
 }
 
