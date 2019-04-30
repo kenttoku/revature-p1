@@ -15,10 +15,27 @@ function updateImageDisplay () {
   } else {
     const image = document.createElement('img');
     image.src = window.URL.createObjectURL(curFiles[0]);
+
     preview.appendChild(image);
   }
 }
 
+function submitImage (e) {
+  e.preventDefault();
+  const curFiles = input.files;
+  const formData = new FormData();
+  formData.append('photo', curFiles[0]);
+
+  fetch('/upload', {
+    method: 'POST',
+    body: formData
+  })
+    .then(res => console.log(res));
+}
+
 const preview = document.querySelector('.preview');
 const input = document.querySelector('input');
+const form = document.querySelector('form');
+
 input.addEventListener('change', updateImageDisplay);
+form.addEventListener('submit', submitImage);
