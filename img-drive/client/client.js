@@ -30,7 +30,18 @@ function submitImage (e) {
     method: 'POST',
     body: formData
   })
-    .then(res => console.log(res));
+    .then(fetch('/images')
+      .then(res => res.json())
+      .then(res => {
+        while (gallery.firstChild) {
+          gallery.removeChild(gallery.firstChild);
+        }
+        res.forEach(image => {
+          const element = document.createElement('img');
+          element.src = `/images/${image}`;
+          gallery.appendChild(element);
+        });
+      }));
 }
 
 const preview = document.querySelector('.preview');
@@ -46,9 +57,11 @@ if (gallery) {
     .then(res => res.json())
     .then(res => {
       res.forEach(image => {
-        const element = document.createElement('img');
-        element.src = `/images/${image}`;
-        gallery.appendChild(element);
+        const div = document.createElement('div');
+        const img = document.createElement('img');
+        img.src = `/images/${image}`;
+        div.appendChild(img);
+        gallery.appendChild(div);
       });
     });
 }
