@@ -44,7 +44,11 @@ form.addEventListener('submit', submitImage);
 if (gallery) {
   fetch('/images')
     .then(res => res.json())
-    .then(res => res.forEach((image, index) => {
-      console.log(image);
-    }));
+    .then(res => {
+      res.forEach(image => {
+        const element = document.createElement('img');
+        element.src = `/images/${image}`;
+        gallery.appendChild(element);
+      });
+    });
 }

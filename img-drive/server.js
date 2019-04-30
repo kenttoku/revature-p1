@@ -11,6 +11,7 @@ const directoryPath = path.join(__dirname, '/uploads/images');
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.static('./client'));
+app.use(express.static('./uploads'));
 
 // upload file. currently uploading to a directory
 // replace with uploading to a DB later
@@ -26,7 +27,6 @@ app.get('/images', (req, res) => {
     if (err) {
       return res.json([]);
     }
-    console.log(files);
     return res.json(files);
   });
 });
