@@ -101,6 +101,17 @@ main () {
 
   # Create VM w/Disk
   create_vm "$resource_group" "$vm_name" "$image" "$size" "$admin_username" "$disk_name"
+
+  # Get the Public IP of the VM createdvm
+  publicIps=$(az vm show -g "$resource_group" -n "$vm_name" -d --query publicIps | sed 's/"//g')
+  echo $publicIps
+
+  # Copy App to VM
+  ssh -o "StrictHostKeyChecking=no" "${admin_username}@${publicIps}" "mkdir -p /home/${admin_username}/img-drive/client"
+  scp -r img-drive/client "${admin_username}@${publicIps}:/home/${admin_username}/img-drive/client"
+  scp -r img-drive/package.json "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
+  scp -r img-drive/server.js "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
 }
 
 main "$@"
+

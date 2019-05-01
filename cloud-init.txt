@@ -13,8 +13,7 @@ runcmd:
   - chown -R kent:kent /media/app
   - chmod -R 777 /media/app
   - cd /home/kent
-  - mkdir app
-  - cd app
-  - npm init -y
-  - npm install --save express multer morgan
+  - mv img-drive /media/app/img-drive
+  - cd /media/app/img-drive
+  - npm install
   - mkdir /home/kent/test
