@@ -85,13 +85,16 @@ create_vm () {
 main () {
   # Variables
   resource_group=$1
-  vm_name=$2
+  project_name=$2
   location=$3
   image=$4
   size=$5
   admin_username=$6
-  disk_name=${vm_name}disk
   disk_size=10
+  vm_name=${project_name}-vm
+  disk_name=${project_name}-disk
+  snapshot_name=${project_name}-snapshot
+  image_name=${project_name}-image
 
   # Check Resource Group
   check_resource_group "$resource_group" "$location"
@@ -117,6 +120,21 @@ main () {
     echo "Waiting for VM to stop"
     sleep 30
   done
+
+  echo "Detaching disk."
+  az vm disk detach -g $resource_group -n $disk_name --vm-name $vm_name
+  echo "Detached Disk disk."
+
+  # Create snapshot of disk
+  echo "Creating snapshot."
+  az snapshot create -g $resource_group -n $snapshot_name --source $disk_name
+  echo "Created snapshot."
+
+  # Create image of VM
+
+  # Create 3 disks from snapshot
+
+  # Create 3 VMs from Image
 }
 
 main "$@"
