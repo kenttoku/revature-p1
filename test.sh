@@ -8,6 +8,9 @@ case "$command" in
     ;;
   "deletegroup")
     az group delete --no-wait -yg "$2"
+    az group delete --no-wait -yg "$3"
+    az group delete --no-wait -yg "$4"
+    az group delete --no-wait -yg "$5"
     ;;
   "vmtable")
     az vm list -d --output table
