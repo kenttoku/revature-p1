@@ -21,8 +21,6 @@ runcmd:
   - umount /media/app
   - waagent -deprovision+user -force
 power_state:
-  delay: "+1"
   mode: poweroff
   message: Bye Bye
-  timeout: 30
   condition: True
