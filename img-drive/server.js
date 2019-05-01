@@ -1,8 +1,8 @@
-const express = require('express');
+const express = require('./node_modules/express');
 const path = require('path');
 const fs = require('fs');
-const morgan = require('morgan');
-const multer = require('multer');
+const morgan = require('./node_modules/morgan');
+const multer = require('./node_modules/multer');
 const upload = multer({ dest: __dirname + '/uploads/images' });
 const app = express();
 const PORT = 8080;
