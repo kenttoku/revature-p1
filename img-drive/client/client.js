@@ -60,6 +60,7 @@ if (gallery) {
         const div = document.createElement('div');
         const img = document.createElement('img');
         img.src = `/images/${image}`;
+        img.classList.add('gallery-img');
         div.appendChild(img);
         gallery.appendChild(div);
       });
