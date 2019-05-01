@@ -51,6 +51,7 @@ create_vm () {
   size=$4
   admin_username=$5
   disk_name=$6
+  cloud_config=$7
 
   validate_arg "$resource_group" "resource_group"
   validate_arg "$vm_name" "vm_name"
@@ -58,6 +59,7 @@ create_vm () {
   validate_arg "$size" "size"
   validate_arg "$admin_username" "admin_username"
   validate_arg "$disk_name" "disk_name"
+  validate_arg "$cloud_config" "cloud_config"
 
   # Checking existing VM for duplicates
   echo "Validating VM name."
@@ -77,7 +79,7 @@ create_vm () {
     --admin-username "$admin_username" \
     --attach-data-disk "$disk_name" \
     --generate-ssh-keys \
-    --custom-data ./cloud-init.txt
+    --custom-data "$cloud_config"
   echo "VM created."
 }
 
@@ -103,7 +105,7 @@ main () {
   create_disk "$resource_group" "$disk_name" "$disk_size"
 
   # Create VM w/Disk
-  create_vm "$resource_group" "$vm_name" "$image" "$size" "$admin_username" "$disk_name"
+  create_vm "$resource_group" "$vm_name" "$image" "$size" "$admin_username" "$disk_name" "./cloud-init.txt"
 
   # Get the Public IP of the VM createdvm
   publicIps=$(az vm show -g "$resource_group" -n "$vm_name" -d --query publicIps | sed 's/"//g')
@@ -146,16 +148,20 @@ main () {
   az image create -g $resource_group -n $image_name --source $vm_name
   echo "Image created."
 
-#   # Create 3 disks from snapshot
-#   echo "Creating disks from snapshot"
-#   az disk create -g $resource_group -n ${disk_name}-1 --source $snapshot_name
-#   az disk create -g $resource_group -n ${disk_name}-2 --source $snapshot_name
-#   az disk create -g $resource_group -n ${disk_name}-3 --source $snapshot_name
-#   echo "Disks created from snapshot"
-#   az disk create -g p6 -n project-disk-1 --source project-snapshot
-#   az vm create -g p6 -n project-vm-1 --image project-image --size Standard_B1s --admin-username kent --generate-ssh-key --attach-data-disk project-disk-1
-#   # Create 3 VMs from Image
-# }
+  # Create 3 disks from snapshot
+  echo "Creating disks from snapshot"
+  az disk create -g $resource_group -n ${disk_name}-1 --source $snapshot_name
+  az disk create -g $resource_group -n ${disk_name}-2 --source $snapshot_name
+  az disk create -g $resource_group -n ${disk_name}-3 --source $snapshot_name
+  echo "Disks created from snapshot"
+
+  # Create 3 VMs from Image
+  echo "Creating VMs from image."
+  create_vm "$resource_group" "${vm_name}-1" "$image_name" "$size" "$admin_username" "${disk_name}-1" "./start-app.txt"
+  create_vm "$resource_group" "${vm_name}-2" "$image_name" "$size" "$admin_username" "${disk_name}-2" "./start-app.txt"
+  create_vm "$resource_group" "${vm_name}-3" "$image_name" "$size" "$admin_username" "${disk_name}-3" "./start-app.txt"
+  echo "VMs created."
+}
 
 main "$@"
 
