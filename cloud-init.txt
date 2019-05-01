@@ -13,7 +13,16 @@ runcmd:
   - chown -R kent:kent /media/app
   - chmod -R 777 /media/app
   - cd /home/kent
+  - while [ -z $(ls img-drive/server.js) ]; do echo "waiting for scp to finish"; done
   - mv img-drive /media/app/img-drive
   - cd /media/app/img-drive
   - npm install
   - mkdir /home/kent/test
+  - umount /media/app
+  - waagent -deprovision+user -force
+power_state:
+  delay: "+1"
+  mode: poweroff
+  message: Bye Bye
+  timeout: 30
+  condition: True
