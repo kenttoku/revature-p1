@@ -93,8 +93,21 @@ main () {
   size=$5
   admin_username=$6
   disk_size=10
+
+  # VM names
   vm_name=${project_name}-vm
+  vm0_name=${vm_name}-0
+  vm1_name=${vm_name}-1
+  vm2_name=${vm_name}-2
+  vm3_name=${vm_name}-3
+
+  # Disk names
   disk_name=${project_name}-disk
+  disk0_name=${disk_name}-0
+  disk1_name=${disk_name}-1
+  disk2_name=${disk_name}-2
+  disk3_name=${disk_name}-3
+
   snapshot_name=${project_name}-snapshot
   image_name=${project_name}-image
 
@@ -102,64 +115,64 @@ main () {
   check_resource_group "$resource_group" "$location"
 
   # Create Disk
-  create_disk "$resource_group" "$disk_name" "$disk_size"
+  create_disk "$resource_group" "$disk0_name" "$disk_size"
 
   # Create VM w/Disk
-  create_vm "$resource_group" "$vm_name" "$image" "$size" "$admin_username" "$disk_name" "./cloud-init.txt"
+  create_vm "$resource_group" "$vm0_name" "$image" "$size" "$admin_username" "$disk0_name" "./cloud-init.txt"
 
   # Get the Public IP of the VM createdvm
-  publicIps=$(az vm show -g "$resource_group" -n "$vm_name" -d --query publicIps | sed 's/"//g')
+  publicIps=$(az vm show -g "$resource_group" -n "$vm0_name" -d --query publicIps | sed 's/"//g')
   echo $publicIps
 
   # Copy App to VM
   ssh -o "StrictHostKeyChecking=no" "${admin_username}@${publicIps}" "mkdir -p /home/${admin_username}/img-drive/client"
-  scp -r img-drive/client "${admin_username}@${publicIps}:/home/${admin_username}/img-drive/client"
+  scp -r img-drive/client "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
   scp -r img-drive/package.json "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
   scp -r img-drive/server.js "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
 
   # Wait for VM to finish cloud-init
-  while [ "$(az vm show -g $resource_group -n $vm_name -d --query powerState)" != "\"VM stopped\"" ]; do
+  while [ "$(az vm show -g "$resource_group" -n "$vm0_name" -d --query powerState)" != "\"VM stopped\"" ]; do
     echo "Waiting for VM to stop"
     sleep 30
   done
 
   # Detach disk from VM
   echo "Detaching disk."
-  az vm disk detach -g $resource_group -n $disk_name --vm-name $vm_name
+  az vm disk detach -g "$resource_group" -n "$disk0_name" --vm-name "$vm0_name"
   echo "Detached Disk disk."
 
   # Create snapshot of disk
   echo "Creating snapshot."
-  az snapshot create -g $resource_group -n $snapshot_name --source $disk_name
+  az snapshot create -g "$resource_group" -n "$snapshot_name" --source "$disk0_name"
   echo "Snapshot created."
 
   # Deallocate VM
   echo "Deallocating VM."
-  az vm deallocate -g $resource_group -n $vm_name
+  az vm deallocate -g "$resource_group" -n "$vm0_name"
   echo "Deallocated VM."
 
   # Generalize VM
   echo "Generalizing VM."
-  az vm generalize -g $resource_group -n $vm_name
+  az vm generalize -g "$resource_group" -n "$vm0_name"
   echo "Generalized VM."
 
   # Create image of VM
   echo "Creating image."
-  az image create -g $resource_group -n $image_name --source $vm_name
+  az image create -g "$resource_group" -n "$image_name" --source "$vm0_name"
   echo "Image created."
 
   # Create 3 disks from snapshot
   echo "Creating disks from snapshot"
-  az disk create -g $resource_group -n ${disk_name}-1 --source $snapshot_name
-  az disk create -g $resource_group -n ${disk_name}-2 --source $snapshot_name
-  az disk create -g $resource_group -n ${disk_name}-3 --source $snapshot_name
+  az disk create -g "$resource_group" -n "${disk1_name}" --source "$snapshot_name"
+  az disk create -g "$resource_group" -n "${disk2_name}" --source "$snapshot_name"
+  az disk create -g "$resource_group" -n "${disk3_name}" --source "$snapshot_name"
   echo "Disks created from snapshot"
 
   # Create 3 VMs from Image
   echo "Creating VMs from image."
-  create_vm "$resource_group" "${vm_name}-1" "$image_name" "$size" "$admin_username" "${disk_name}-1" "./start-app.txt"
-  create_vm "$resource_group" "${vm_name}-2" "$image_name" "$size" "$admin_username" "${disk_name}-2" "./start-app.txt"
-  create_vm "$resource_group" "${vm_name}-3" "$image_name" "$size" "$admin_username" "${disk_name}-3" "./start-app.txt"
+  create_vm "$resource_group" "${vm1_name}" "$image_name" "$size" "$admin_username" "${disk1_name}" "./start-app.txt"
+  create_vm "$resource_group" "${vm2_name}" "$image_name" "$size" "$admin_username" "${disk2_name}" "./start-app.txt"
+  create_vm "$resource_group" "${vm3_name}" "$image_name" "$size" "$admin_username" "${disk3_name}" "./start-app.txt"
   echo "VMs created."
 }
 
