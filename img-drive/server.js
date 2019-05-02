@@ -25,7 +25,7 @@ app.use(express.static('./uploads'));
 
 // upload file. currently uploading to a directory
 // replace with uploading to a DB later
-app.post('/upload', upload.single('image'), (req, res) => {
+app.post('/upload', upload.single('photo'), (req, res) => {
   if (req.file) {
     res.json(req.file);
   }
