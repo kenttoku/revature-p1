@@ -174,6 +174,17 @@ main () {
   create_vm "$resource_group" "${vm2_name}" "$image_name" "$size" "$admin_username" "${disk2_name}" "./start-app.txt"
   create_vm "$resource_group" "${vm3_name}" "$image_name" "$size" "$admin_username" "${disk3_name}" "./start-app.txt"
   echo "VMs created."
+
+  # Open Ports
+  echo "Opening ports."
+  az vm open-port -g "$resource_group" -n "${vm1_name}" --port 8080
+  az vm open-port -g "$resource_group" -n "${vm2_name}" --port 8080
+  az vm open-port -g "$resource_group" -n "${vm3_name}" --port 8080
+  echo "Ports opened."
+
+  # Show VMs
+  az vm list -d --output table
+  echo "Script complete"
 }
 
 main "$@"
