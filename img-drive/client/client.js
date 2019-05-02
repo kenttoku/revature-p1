@@ -1,27 +1,8 @@
-function updateImageDisplay () {
-  // If there is something inside preview, remove it.
-  while (preview.firstChild) {
-    preview.removeChild(preview.firstChild);
-  }
-
-  // Get current files.
-  const curFiles = input.files;
-
-  // If no files selected, show paragraph, otherwise, show image preview
-  if (!curFiles.length) {
-    const para = document.createElement('p');
-    para.textContent = 'No files currently selected for upload';
-    preview.appendChild(para);
-  } else {
-    const image = document.createElement('img');
-    image.src = window.URL.createObjectURL(curFiles[0]);
-    image.classList.add('gallery-img');
-
-    preview.appendChild(image);
-  }
-}
-
 function fetchImages (){
+  while (gallery.firstChild) {
+    gallery.removeChild(gallery.firstChild);
+  }
+
   fetch('/images')
     .then(res => res.json())
     .then(res => {
@@ -38,6 +19,7 @@ function fetchImages (){
 
 function submitImage (e) {
   e.preventDefault();
+  const input = document.querySelector('input');
   const curFiles = input.files;
   const formData = new FormData();
   formData.append('photo', curFiles[0]);
@@ -47,14 +29,13 @@ function submitImage (e) {
     body: formData
   })
     .then(fetchImages());
+  console.log(input.files);
+  input.value = null;
 }
 
-const preview = document.querySelector('.preview');
-const input = document.querySelector('input');
 const form = document.querySelector('form');
 const gallery = document.querySelector('#gallery');
 
-input.addEventListener('change', updateImageDisplay);
 form.addEventListener('submit', submitImage);
 
 if (gallery) {
