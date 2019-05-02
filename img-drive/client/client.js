@@ -15,44 +15,13 @@ function updateImageDisplay () {
   } else {
     const image = document.createElement('img');
     image.src = window.URL.createObjectURL(curFiles[0]);
+    image.classList.add('gallery-img');
 
     preview.appendChild(image);
   }
 }
 
-function submitImage (e) {
-  e.preventDefault();
-  const curFiles = input.files;
-  const formData = new FormData();
-  formData.append('photo', curFiles[0]);
-
-  fetch('/upload', {
-    method: 'POST',
-    body: formData
-  })
-    .then(fetch('/images')
-      .then(res => res.json())
-      .then(res => {
-        while (gallery.firstChild) {
-          gallery.removeChild(gallery.firstChild);
-        }
-        res.forEach(image => {
-          const element = document.createElement('img');
-          element.src = `/images/${image}`;
-          gallery.appendChild(element);
-        });
-      }));
-}
-
-const preview = document.querySelector('.preview');
-const input = document.querySelector('input');
-const form = document.querySelector('form');
-const gallery = document.querySelector('#gallery');
-
-input.addEventListener('change', updateImageDisplay);
-form.addEventListener('submit', submitImage);
-
-if (gallery) {
+function fetchImages (){
   fetch('/images')
     .then(res => res.json())
     .then(res => {
@@ -65,4 +34,29 @@ if (gallery) {
         gallery.appendChild(div);
       });
     });
+}
+
+function submitImage (e) {
+  e.preventDefault();
+  const curFiles = input.files;
+  const formData = new FormData();
+  formData.append('photo', curFiles[0]);
+
+  fetch('/upload', {
+    method: 'POST',
+    body: formData
+  })
+    .then(fetchImages());
+}
+
+const preview = document.querySelector('.preview');
+const input = document.querySelector('input');
+const form = document.querySelector('form');
+const gallery = document.querySelector('#gallery');
+
+input.addEventListener('change', updateImageDisplay);
+form.addEventListener('submit', submitImage);
+
+if (gallery) {
+  fetchImages();
 }
