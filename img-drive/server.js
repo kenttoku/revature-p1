@@ -4,7 +4,17 @@ const fs = require('fs');
 const morgan = require('morgan');
 const multer = require('multer');
 const directoryPath = path.join(__dirname, '/uploads/images');
-const upload = multer({ dest: __dirname + '/uploads/images' });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, directoryPath);
+  },
+  filename: function (req, file, cb) {
+    let extArray = file.mimetype.split('/');
+    let extension = extArray[extArray.length - 1];
+    cb(null, file.fieldname + '-' + Date.now() + '.' + extension);
+  }
+});
+const upload = multer({ storage: storage });
 const app = express();
 const PORT = 8080;
 
@@ -15,7 +25,7 @@ app.use(express.static('./uploads'));
 
 // upload file. currently uploading to a directory
 // replace with uploading to a DB later
-app.post('/upload', upload.single('photo'), (req, res) => {
+app.post('/upload', upload.single('image'), (req, res) => {
   if (req.file) {
     res.json(req.file);
   }
