@@ -13,7 +13,7 @@ runcmd:
   - chown -R kent:kent /media/app
   - chmod -R 777 /media/app
   - cd /home/kent
-  - while [ -z $(ls img-drive/server.js) ]; do echo "waiting for scp to finish"; done
+  - while [ -z $(ls img-drive/package.json) ]; do echo "waiting for scp to finish"; done
   - mv img-drive /media/app/img-drive
   - cd /media/app/img-drive
   - npm install

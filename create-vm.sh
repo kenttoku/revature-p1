@@ -127,8 +127,8 @@ main () {
   # Copy App to VM
   ssh -o "StrictHostKeyChecking=no" "${admin_username}@${publicIps}" "mkdir -p /home/${admin_username}/img-drive/client"
   scp -r img-drive/client "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
+  scp -r img-drive/server "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
   scp -r img-drive/package.json "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
-  scp -r img-drive/server.js "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
 
   # Wait for VM to finish cloud-init
   while [ "$(az vm show -g "$resource_group" -n "$vm0_name" -d --query powerState)" != "\"VM stopped\"" ]; do
