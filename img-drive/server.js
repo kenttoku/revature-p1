@@ -1,12 +1,12 @@
-const express = require('./node_modules/express');
+const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const morgan = require('./node_modules/morgan');
-const multer = require('./node_modules/multer');
+const morgan = require('morgan');
+const multer = require('multer');
+const directoryPath = path.join(__dirname, '/uploads/images');
 const upload = multer({ dest: __dirname + '/uploads/images' });
 const app = express();
 const PORT = 8080;
-const directoryPath = path.join(__dirname, '/uploads/images');
 
 app.use(morgan('dev'));
 app.use(express.json());
