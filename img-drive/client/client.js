@@ -29,7 +29,6 @@ function submitImage (e) {
     body: formData
   })
     .then(fetchImages());
-  console.log(input.files);
   input.value = null;
 }
 
