@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const morgan = require('morgan');
 const multer = require('multer');
-const directoryPath = path.join(__dirname, '/uploads/images');
+const directoryPath = path.join(__dirname, '../uploads/images');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, directoryPath);
