@@ -37,6 +37,6 @@ const gallery = document.querySelector('#gallery');
 
 form.addEventListener('submit', submitImage);
 
-if (gallery) {
-  fetchImages();
-}
+// if (gallery) {
+//   fetchImages();
+// }
