@@ -4,7 +4,7 @@ command=$1
 
 case "$command" in
   "start")
-    ./create-vm.sh "$2" project southcentralus UbuntuLTS Standard_B1s kent
+    ./create-web-app.sh "$2" img-drive "imgdrive${3}" git@github.com:kenttoku/img-drive.git
     ;;
   "deletegroup")
     if [ -n "$2" ]; then az group delete -yg "$2"; fi
