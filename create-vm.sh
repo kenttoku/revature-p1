@@ -20,7 +20,7 @@ check_resource_group () {
   validate_arg "$location" "location"
 
   echo "Validating resource group."
-  if [ "$(az group exists --name "$resource_group")" = "false" ]; then
+  if [ "$(az group exists -n "$resource_group")" = "false" ]; then
     echo "Resource group does not exist. Creating."
     az group create -n "$resource_group" -l "$location"
   fi
@@ -138,38 +138,46 @@ main () {
   location=$3
   image=$4
   size=$5
-  admin_username=$6
+  admin_username=kent
   disk_size=10
 
   # VM names
   vm_name=${project_name}-vm
-  vm0_name=${vm_name}-0
-  vm1_name=${vm_name}-1
-  vm2_name=${vm_name}-2
-  vm3_name=${vm_name}-3
+  vm_original_name=${vm_name}-original
+  vm_as_name=${vm_name}-as
 
   # Disk names
   disk_name=${project_name}-disk
-  disk0_name=${disk_name}-0
-  disk1_name=${disk_name}-1
-  disk2_name=${disk_name}-2
-  disk3_name=${disk_name}-3
+  disk_original_name=${disk_name}-original
+  disk_as_name=${disk_name}-as
 
+  # Other names
   snapshot_name=${project_name}-snapshot
   custom_image=${project_name}-image
   as_name=${project_name}-as
+  public_ip_name=${project_name}-ip
+  load_balancer_name=${project_name}-lb
+  load_balancer_rule_name=${project_name}-lbr
+  front_end_ip_name=${project_name}-fip
+  back_end_pool_name=${project_name}-bep
+  health_probe_name=${project_name}-hp
+  vnet_name=${project_name}-vnet
+  subnet_name=${project_name}-subnet
+  nsg_name=${project_name}-ngs
+  nic_name=${project_name}-nic
+
 
   # Check Resource Group
   check_resource_group "$resource_group" "$location"
 
   # Create Disk
-  create_disk "$resource_group" "$disk0_name" "$disk_size"
+  create_disk "$resource_group" "$disk_original_name" "$disk_size"
 
   # Create VM w/Disk
-  create_vm "$resource_group" "$vm0_name" "$image" "$size" "$admin_username" "$disk0_name" "./cloud-init.txt"
+  create_vm "$resource_group" "$vm_original_name" "$image" "$size" "$admin_username" "$disk_original_name" "./cloud-init.txt"
 
   # Get the Public IP of the VM createdvm
-  publicIps=$(az vm show -g "$resource_group" -n "$vm0_name" -d --query publicIps | sed 's/"//g')
+  publicIps=$(az vm show -g "$resource_group" -n "$vm_original_name" -d --query publicIps | sed 's/"//g')
   echo $publicIps
 
   # Copy App to VM
@@ -179,126 +187,119 @@ main () {
   scp -r img-drive/package.json "${admin_username}@${publicIps}:/home/${admin_username}/img-drive"
 
   # Wait for VM to finish cloud-init
-  while [ "$(az vm show -g "$resource_group" -n "$vm0_name" -d --query powerState)" != "\"VM stopped\"" ]; do
+  while [ "$(az vm show -g "$resource_group" -n "$vm_original_name" -d --query powerState)" != "\"VM stopped\"" ]; do
     echo "Waiting for VM to stop"
     sleep 30
   done
 
   # Detach disk from VM
   echo "Detaching disk."
-  az vm disk detach -g "$resource_group" -n "$disk0_name" --vm-name "$vm0_name"
+  az vm disk detach -g "$resource_group" -n "$disk_original_name" --vm-name "$vm_original_name"
   echo "Detached Disk disk."
 
   # Create snapshot of disk
   echo "Creating snapshot."
-  az snapshot create -g "$resource_group" -n "$snapshot_name" --source "$disk0_name"
+  az snapshot create -g "$resource_group" -n "$snapshot_name" --source "$disk_original_name"
   echo "Snapshot created."
 
   # Deallocate VM
   echo "Deallocating VM."
-  az vm deallocate -g "$resource_group" -n "$vm0_name"
+  az vm deallocate -g "$resource_group" -n "$vm_original_name"
   echo "Deallocated VM."
 
   # Generalize VM
   echo "Generalizing VM."
-  az vm generalize -g "$resource_group" -n "$vm0_name"
+  az vm generalize -g "$resource_group" -n "$vm_original_name"
   echo "Generalized VM."
 
   # Create image of VM
   echo "Creating image."
-  az image create -g "$resource_group" -n "$custom_image" --source "$vm0_name"
+  az image create -g "$resource_group" -n "$custom_image" --source "$vm_original_name"
   echo "Image created."
 
   # Create 3 disks from snapshot
   echo "Creating disks from snapshot."
-  az disk create -g "$resource_group" -n "${disk1_name}" --source "$snapshot_name"
-  az disk create -g "$resource_group" -n "${disk2_name}" --source "$snapshot_name"
-  az disk create -g "$resource_group" -n "${disk3_name}" --source "$snapshot_name"
+  az disk create -g "$resource_group" -n "${disk_as_name}1" --source "$snapshot_name"
+  az disk create -g "$resource_group" -n "${disk_as_name}2" --source "$snapshot_name"
+  az disk create -g "$resource_group" -n "${disk_as_name}3" --source "$snapshot_name"
   echo "Disks created from snapshot."
 
   # Setting Up Load Balancer
   echo "Creating Load Balancer."
   az network public-ip create \
      -g "$resource_group" \
-     -n myPublicIP
+     -n "$public_ip_name"
 
   az network lb create \
     -g "$resource_group" \
-    -n myLoadBalancer \
-    --frontend-ip-name myFrontEndPool \
-    --backend-pool-name myBackEndPool \
-    --public-ip-address myPublicIP
+    -n "$load_balancer_name" \
+    --frontend-ip-name "$front_end_ip_name" \
+    --backend-pool-name "$back_end_pool_name" \
+    --public-ip-address "$public_ip_name"
 
   az network lb probe create \
-    --resource-group "$resource_group" \
-    --lb-name myLoadBalancer \
-    --name myHealthProbe \
+    -g "$resource_group" \
+    --lb-name "$load_balancer_name" \
+    -n "$health_probe_name" \
     --protocol tcp \
     --port 80
 
   az network lb rule create \
-    --resource-group "$resource_group" \
-    --lb-name myLoadBalancer \
-    --name myLoadBalancerRule \
+    -g "$resource_group" \
+    --lb-name "$load_balancer_name" \
+    -n "$load_balancer_rule_name" \
     --protocol tcp \
     --frontend-port 80 \
     --backend-port 80 \
-    --frontend-ip-name myFrontEndPool \
-    --backend-pool-name myBackEndPool \
-    --probe-name myHealthProbe
+    --frontend-ip-name "$front_end_ip_name" \
+    --backend-pool-name "$back_end_pool_name" \
+    --probe-name "$health_probe_name"
   echo "Load Balancer Created."
 
   # Create Network Resources
   az network vnet create \
-    --resource-group "$resource_group" \
-    --name myVnet \
-    --subnet-name mySubnet
+    -g "$resource_group" \
+    -n "$vnet_name" \
+    --subnet-name "$subnet_name"
 
   az network nsg create \
-    --resource-group "$resource_group" \
-    --name myNetworkSecurityGroup
+    -g "$resource_group" \
+    -n "$nsg_name"
 
   az network nsg rule create \
-    --resource-group "$resource_group" \
-    --nsg-name myNetworkSecurityGroup \
-    --name myNetworkSecurityGroupRule \
+    -g "$resource_group" \
+    --nsg-name "$nsg_name" \
+    -n "$nsg_name"Rule \
     --priority 1001 \
     --protocol tcp \
     --destination-port-range 80
 
   for i in `seq 1 3`; do
     az network nic create \
-      --resource-group "$resource_group" \
-      --name myNic$i \
-      --vnet-name myVnet \
-      --subnet mySubnet \
-      --network-security-group myNetworkSecurityGroup \
-      --lb-name myLoadBalancer \
-      --lb-address-pools myBackEndPool
+      -g "$resource_group" \
+      -n "${nic_name}${i}" \
+      --vnet-name "$vnet_name" \
+      --subnet "$subnet_name" \
+      --network-security-group "$nsg_name" \
+      --lb-name "$load_balancer_name" \
+      --lb-address-pools "$back_end_pool_name"
   done
 
   # Create an Availability Set
   echo "Creating VM Availability Set."
   az vm availability-set create \
-    --resource-group "$resource_group" \
-    --name "$as_name" \
+    -g "$resource_group" \
+    -n "$as_name" \
     --platform-fault-domain-count 3 \
     --platform-update-domain-count 3
   echo "VM Availability Set Created."
 
   # # Create 3 VMs from Image
-  # echo "Creating VMs from image."
-  create_vmas "$resource_group" "${vm1_name}" "$custom_image" "$size" "$admin_username" "${disk1_name}" "./start-app.txt" "$as_name" myNic1
-  create_vmas "$resource_group" "${vm2_name}" "$custom_image" "$size" "$admin_username" "${disk2_name}" "./start-app.txt" "$as_name" myNic2
-  create_vmas "$resource_group" "${vm3_name}" "$custom_image" "$size" "$admin_username" "${disk3_name}" "./start-app.txt" "$as_name" myNic3
-  # echo "VMs created."
-
-  # # Open Ports
-  # echo "Opening ports."
-  # az vm open-port -g "$resource_group" -n "${vm1_name}" --port 8080
-  # az vm open-port -g "$resource_group" -n "${vm2_name}" --port 8080
-  # az vm open-port -g "$resource_group" -n "${vm3_name}" --port 8080
-  # echo "Ports opened."
+  echo "Creating VMs in Availability Set."
+  create_vmas "$resource_group" "${vm_as_name}1" "$custom_image" "$size" "$admin_username" "${disk_as_name}1" "./start-app.txt" "$as_name" "${nic_name}1"
+  create_vmas "$resource_group" "${vm_as_name}2" "$custom_image" "$size" "$admin_username" "${disk_as_name}2" "./start-app.txt" "$as_name" "${nic_name}2"
+  create_vmas "$resource_group" "${vm_as_name}3" "$custom_image" "$size" "$admin_username" "${disk_as_name}3" "./start-app.txt" "$as_name" "${nic_name}3"
+  echo "VMs created."
 
   # Show VMs
   az vm list -d --output table
