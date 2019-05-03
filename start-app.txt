@@ -4,5 +4,25 @@
 packages:
   - nodejs
   - npm
+  - nginx
 mounts:
   - [ sdc, /media, "ext4", "defaults", "0", "0" ]
+write_files:
+  - owner: www-data:www-data
+  - path: /etc/nginx/sites-available/default
+    content: |
+      server {
+        listen 80;
+        location / {
+          proxy_pass http://localhost:8080;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection keep-alive;
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+        }
+      }
+runcmd:
+  - service nginx restart
+  - cd /media/img-drive
+  - npm start
