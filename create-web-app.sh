@@ -27,7 +27,7 @@ echo "Make a note of your Blob storage account key..."
 echo $blobStorageAccountKey
 
 az appservice plan create -g $resource_group -n $plan_name --sku B1
-az webapp create -g $resource_group -n $app_name --plan $plan_name --runtime "node|6.9"
+az webapp create -g $resource_group -n $app_name --plan $plan_name --runtime "node|10.6"
 
 az webapp config appsettings set --name $app_name --resource-group $resource_group \
   --settings AZURE_STORAGE_ACCOUNT_NAME=$blobStorageAccount \
