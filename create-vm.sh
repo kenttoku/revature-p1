@@ -269,7 +269,7 @@ main () {
   az network nsg rule create \
     -g "$resource_group" \
     --nsg-name "$nsg_name" \
-    -n "$nsg_name"Rule \
+    -n "${nsg_name}-rule" \
     --priority 1001 \
     --protocol tcp \
     --destination-port-range 80
