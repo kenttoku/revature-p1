@@ -6,6 +6,3 @@ packages:
   - npm
 mounts:
   - [ sdc, /media, "ext4", "defaults", "0", "0" ]
-runcmd:
-  - cd /media/img-drive
-  - node server.js

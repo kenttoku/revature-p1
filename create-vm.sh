@@ -109,7 +109,8 @@ main () {
   disk3_name=${disk_name}-3
 
   snapshot_name=${project_name}-snapshot
-  image_name=${project_name}-image
+  custom_image=${project_name}-image
+  ss_name=${project_name}-ss
 
   # Check Resource Group
   check_resource_group "$resource_group" "$location"
@@ -158,29 +159,46 @@ main () {
 
   # Create image of VM
   echo "Creating image."
-  az image create -g "$resource_group" -n "$image_name" --source "$vm0_name"
+  az image create -g "$resource_group" -n "$custom_image" --source "$vm0_name"
   echo "Image created."
 
   # Create 3 disks from snapshot
-  echo "Creating disks from snapshot"
+  echo "Creating disks from snapshot."
   az disk create -g "$resource_group" -n "${disk1_name}" --source "$snapshot_name"
   az disk create -g "$resource_group" -n "${disk2_name}" --source "$snapshot_name"
   az disk create -g "$resource_group" -n "${disk3_name}" --source "$snapshot_name"
-  echo "Disks created from snapshot"
+  echo "Disks created from snapshot."
 
-  # Create 3 VMs from Image
-  echo "Creating VMs from image."
-  create_vm "$resource_group" "${vm1_name}" "$image_name" "$size" "$admin_username" "${disk1_name}" "./start-app.txt"
-  create_vm "$resource_group" "${vm2_name}" "$image_name" "$size" "$admin_username" "${disk2_name}" "./start-app.txt"
-  create_vm "$resource_group" "${vm3_name}" "$image_name" "$size" "$admin_username" "${disk3_name}" "./start-app.txt"
-  echo "VMs created."
+  # Create an Availability Set
+  echo "Creating VM Scale Sets."
+  az vmss create \
+    -g "$resource_group" \
+    -n "$ss_name" \
+    --image "$custom_image" \
+    --upgrade-policy-mode automatic \
+    --custom-data "./start-app.txt" \
+    --admin-username "$admin_username" \
+    --generate-ssh-keys \
+    --instance-count 3
+  echo "VM Scale Set Created."
 
-  # Open Ports
-  echo "Opening ports."
-  az vm open-port -g "$resource_group" -n "${vm1_name}" --port 8080
-  az vm open-port -g "$resource_group" -n "${vm2_name}" --port 8080
-  az vm open-port -g "$resource_group" -n "${vm3_name}" --port 8080
-  echo "Ports opened."
+  az vmss disk attach -g "$resource_group" --vmss-name "$ss_name" --disk "$disk1_name"
+  az vmss disk attach -g "$resource_group" --vmss-name "$ss_name" --disk "$disk2_name"
+  az vmss disk attach -g "$resource_group" --vmss-name "$ss_name" --disk "$disk3_name"
+
+  # # Create 3 VMs from Image
+  # echo "Creating VMs from image."
+  # create_vm "$resource_group" "${vm1_name}" "$custom_image" "$size" "$admin_username" "${disk1_name}" "./start-app.txt"
+  # create_vm "$resource_group" "${vm2_name}" "$custom_image" "$size" "$admin_username" "${disk2_name}" "./start-app.txt"
+  # create_vm "$resource_group" "${vm3_name}" "$custom_image" "$size" "$admin_username" "${disk3_name}" "./start-app.txt"
+  # echo "VMs created."
+
+  # # Open Ports
+  # echo "Opening ports."
+  # az vm open-port -g "$resource_group" -n "${vm1_name}" --port 8080
+  # az vm open-port -g "$resource_group" -n "${vm2_name}" --port 8080
+  # az vm open-port -g "$resource_group" -n "${vm3_name}" --port 8080
+  # echo "Ports opened."
 
   # Show VMs
   az vm list -d --output table
