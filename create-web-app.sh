@@ -26,12 +26,16 @@ az storage account create \
   --access-tier hot
 echo "Blob storage account created"
 
+# Get blob storage account key
+echo "Retrieving blob storage account key"
 blob_storage_account_key=$(az storage account keys list \
   -g $resource_group \
   -n $blob_storage_account \
   --query [0].value \
   --output tsv)
+echo "Blob storage account key retrieved: $blob_storage_account_key"
 
+# Create storage container
 echo "Creating storage container"
 az storage container create \
   -n images \
@@ -40,15 +44,45 @@ az storage container create \
   --public-access container
 echo "Storage container created"
 
-echo "Make a note of your Blob storage account key..."
-echo $blob_storage_account_key
+# Create SQL Server
+echo "Creating SQL Server"
+az sql server create \
+  -g $resource_group \
+  -n $db_server_name \
+  -u $db_username \
+  -l $location \
+  -p $db_password
+echo "SQL Server created"
 
-az sql server create -g $resource_group -n $db_server_name -u $db_username -l $location -p $db_password
-az sql db create -g $resource_group -n $db_name -s $db_server_name
+# Create SQL Database
+echo "Creating SQL DB"
+az sql db create \
+  -g $resource_group \
+  -n $db_name \
+  -s $db_server_name
+echo "SQL DB created"
 
-az appservice plan create -g $resource_group -n $plan_name --sku B1 --is-linux --number-of-workers 3
-az webapp create -g $resource_group -n $app_name --plan $plan_name --runtime "NODE|10.14"
+# Create App Service Plan
+echo "Creating App Service Plan"
+az appservice plan create \
+  -g $resource_group \
+  -n $plan_name \
+  --sku B1 \
+  --is-linux \
+  --number-of-workers 3
+echo "App Service Plan created"
 
+# Create Web App
+echo "Create Web App"
+az webapp create \
+  -g $resource_group \
+  -n $app_name \
+  --plan $plan_name \
+  --runtime "NODE|10.14"
+echo "Web App Created"
+
+# Add Client IP to server firewall rule
+echo "Adding client IP to server filewall rules"
 client_ip_list=$(az webapp show -g $resource_group -n $app_name  --query "outboundIpAddresses" -o tsv)
 
 for client_ip in $(echo $client_ip_list | sed "s/,/ /g")
@@ -60,17 +94,32 @@ do
     --start-ip-address $client_ip \
     --end-ip-address $client_ip
 done
+echo "Firewall rules updated"
 
-az webapp config appsettings set --name $app_name --resource-group $resource_group \
+# Add environment variables to Web App
+echo "Adding environment variables to web app"
+az webapp config appsettings set \
+  --name $app_name \
+  --resource-group $resource_group \
   --settings AZURE_STORAGE_ACCOUNT_NAME=$blob_storage_account \
   AZURE_STORAGE_ACCOUNT_ACCESS_KEY=$blob_storage_account_key \
   DB_NAME=$db_name \
   DB_USERNAME=$db_username \
   DB_PASSWORD=$db_password \
   DB_HOST=${db_server_name}.database.windows.net
+echo "Environment variables added"
 
-az webapp deployment source config -g $resource_group -n $app_name \
-  --repo-url $repo --branch master --manual-integration
+# Deploy Web App from Github repo
+echo "Deploying Web App"
+az webapp deployment source config \
+  -g $resource_group \
+  -n $app_name \
+  --repo-url $repo \
+  --branch master \
+  --manual-integration
+echo "Web App deployed"
 
+# Open webapp to check
 az webapp browse -g $resource_group -n $app_name
 
+echo "Script completed"
