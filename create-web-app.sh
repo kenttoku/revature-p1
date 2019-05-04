@@ -44,24 +44,6 @@ az storage container create \
   --public-access container
 echo "Storage container created"
 
-# # Create SQL Server
-# echo "Creating SQL Server"
-# az sql server create \
-#   -g $resource_group \
-#   -n $db_server_name \
-#   -u $db_username \
-#   -l $location \
-#   -p $db_password
-# echo "SQL Server created"
-
-# # Create SQL Database
-# echo "Creating SQL DB"
-# az sql db create \
-#   -g $resource_group \
-#   -n $db_name \
-#   -s $db_server_name
-# echo "SQL DB created"
-
 # Create postgres server
 echo "Creating postgres server"
 az postgres server create \
@@ -73,6 +55,9 @@ az postgres server create \
   --sku-name B_Gen5_1 \
   --version 9.6
 echo "Postgres server created"
+
+psql "dbname=postgres host=${db_server_name}.postgres.database.azure.com user=${db_username}@${db_server_name} password=${db_password} port=5432" -f createdb.sql
+psql "dbname=postgres host=${db_server_name}.postgres.database.azure.com user=${db_username}@${db_server_name} password=${db_password} port=5432" -f plx.sql
 
 # Create App Service Plan
 echo "Creating App Service Plan"
