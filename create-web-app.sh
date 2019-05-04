@@ -44,23 +44,35 @@ az storage container create \
   --public-access container
 echo "Storage container created"
 
-# Create SQL Server
-echo "Creating SQL Server"
-az sql server create \
+# # Create SQL Server
+# echo "Creating SQL Server"
+# az sql server create \
+#   -g $resource_group \
+#   -n $db_server_name \
+#   -u $db_username \
+#   -l $location \
+#   -p $db_password
+# echo "SQL Server created"
+
+# # Create SQL Database
+# echo "Creating SQL DB"
+# az sql db create \
+#   -g $resource_group \
+#   -n $db_name \
+#   -s $db_server_name
+# echo "SQL DB created"
+
+# Create postgres server
+echo "Creating postgres server"
+az postgres server create \
   -g $resource_group \
   -n $db_server_name \
-  -u $db_username \
-  -l $location \
-  -p $db_password
-echo "SQL Server created"
-
-# Create SQL Database
-echo "Creating SQL DB"
-az sql db create \
-  -g $resource_group \
-  -n $db_name \
-  -s $db_server_name
-echo "SQL DB created"
+  --location $location \
+  --admin-user $db_username \
+  --admin-password $db_password \
+  --sku-name B_Gen5_1 \
+  --version 9.6
+echo "Postgres server created"
 
 # Create App Service Plan
 echo "Creating App Service Plan"
@@ -81,18 +93,30 @@ az webapp create \
   --runtime "NODE|10.14"
 echo "Web App Created"
 
+# Add Own IP to server firewall rule
+my_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+az postgres server firewall-rule create \
+  -g $resource_group \
+  -s $db_server_name \
+  -n my_ip \
+  --start-ip-address $my_ip \
+  --end-ip-address $my_ip
+
 # Add Client IP to server firewall rule
 echo "Adding client IP to server filewall rules"
+count=1
 client_ip_list=$(az webapp show -g $resource_group -n $app_name  --query "outboundIpAddresses" -o tsv)
 
 for client_ip in $(echo $client_ip_list | sed "s/,/ /g")
 do
-  az sql server firewall-rule create \
+  az postgres server firewall-rule create \
     -g $resource_group \
     -s $db_server_name \
-    -n $client_ip \
+    -n client_ip${count} \
     --start-ip-address $client_ip \
     --end-ip-address $client_ip
+
+  count=$((${count}+1))
 done
 echo "Firewall rules updated"
 
@@ -104,9 +128,9 @@ az webapp config appsettings set \
   --settings AZURE_STORAGE_ACCOUNT_NAME=$blob_storage_account \
   AZURE_STORAGE_ACCOUNT_ACCESS_KEY=$blob_storage_account_key \
   DB_NAME=$db_name \
-  DB_USERNAME=$db_username \
+  DB_USERNAME=$db_username@$db_server_name \
   DB_PASSWORD=$db_password \
-  DB_HOST=${db_server_name}.database.windows.net
+  DB_HOST=${db_server_name}.postgres.database.windows.net
 echo "Environment variables added"
 
 # Deploy Web App from Github repo

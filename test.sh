@@ -15,4 +15,14 @@ case "$command" in
   "vmtable")
     az vm list -d --output table
     ;;
+  "firewall")
+    my_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+    az postgres server firewall-rule create \
+      -g test-group \
+      -s imgdrivekent123dbserver \
+      -n my_ip \
+      --start-ip-address $my_ip \
+      --end-ip-address $my_ip
+    echo $my_ip
+    ;;
 esac
