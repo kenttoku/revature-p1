@@ -10,6 +10,21 @@ db_name=plxobay
 db_username=$5
 db_password=$6
 
+if [ -z $(which az) ]; then
+  echo "No azure-cli. Please install before continuing." 1>&2
+  exit 1
+fi
+
+if [ -z $(which psql) ]; then
+  echo "No psql. Please install before continuing." 1>&2
+  exit 1
+fi
+
+if [ $(az group exists -n $resource_group) = true ]; then
+  echo "Do not use a resource group that already exists. Please choose another name" 2>&1
+  exit 1
+fi
+
 # Create Resource Group
 echo "Creating resource group."
 az group create -n $resource_group --location $location
