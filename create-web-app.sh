@@ -56,9 +56,6 @@ az postgres server create \
   --version 9.6
 echo "Postgres server created"
 
-psql "dbname=postgres host=${db_server_name}.postgres.database.azure.com user=${db_username}@${db_server_name} password=${db_password} port=5432" -f createdb.sql
-psql "dbname=postgres host=${db_server_name}.postgres.database.azure.com user=${db_username}@${db_server_name} password=${db_password} port=5432" -f plx.sql
-
 # Create App Service Plan
 echo "Creating App Service Plan"
 az appservice plan create \
@@ -79,6 +76,7 @@ az webapp create \
 echo "Web App Created"
 
 # Add Own IP to server firewall rule
+echo "Adding own IP to firewall rule"
 my_ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
 az postgres server firewall-rule create \
   -g $resource_group \
@@ -86,6 +84,7 @@ az postgres server firewall-rule create \
   -n my_ip \
   --start-ip-address $my_ip \
   --end-ip-address $my_ip
+echo "Own IP added to firewall rule"
 
 # Add Client IP to server firewall rule
 echo "Adding client IP to server filewall rules"
@@ -105,6 +104,12 @@ do
 done
 echo "Firewall rules updated"
 
+# Seed Database
+echo "Seeding database"
+psql "dbname=postgres host=${db_server_name}.postgres.database.azure.com user=${db_username}@${db_server_name} password=${db_password} port=5432" -f create-db.sql
+psql "dbname=plxobay host=${db_server_name}.postgres.database.azure.com user=${db_username}@${db_server_name} password=${db_password} port=5432" -f plx.sql
+echo "Database seeded"
+
 # Add environment variables to Web App
 echo "Adding environment variables to web app"
 az webapp config appsettings set \
@@ -115,7 +120,9 @@ az webapp config appsettings set \
   DB_NAME=$db_name \
   DB_USERNAME=$db_username@$db_server_name \
   DB_PASSWORD=$db_password \
-  DB_HOST=${db_server_name}.postgres.database.windows.net
+  DB_HOST=${db_server_name}.postgres.database.azure.com \
+  JWT_EXPIRY=7d \
+  JWT_SECRET=mysupersecretkey
 echo "Environment variables added"
 
 # Deploy Web App from Github repo
