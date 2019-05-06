@@ -10,5 +10,5 @@ CREATE TABLE users (
 CREATE TABLE images (
   id serial PRIMARY KEY,
   url text NOT NULL UNIQUE,
-  username text NOT NULL
+  username text
 );

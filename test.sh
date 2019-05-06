@@ -4,7 +4,7 @@ command=$1
 
 case "$command" in
   "start")
-    ./create-web-app.sh "$2" img-drive "imgdrive${3}" "git@github.com:kenttoku/img-drive.git"
+    ./create-web-app.sh "$2" img-drive "imgdrive${3}" "git@github.com:kenttoku/img-drive.git" postgresadmin Please12345
     ;;
   "deletegroup")
     if [ -n "$2" ]; then az group delete -yg "$2"; fi

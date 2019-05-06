@@ -7,8 +7,8 @@ location=southcentralus
 blob_storage_account=${app_name}blob
 db_server_name=${app_name}dbserver
 db_name=plxobay
-db_username=sqladmin
-db_password=Password12345
+db_username=$5
+db_password=$6
 
 # Create Resource Group
 echo "Creating resource group."
