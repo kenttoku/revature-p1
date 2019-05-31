@@ -12,4 +12,4 @@ Example:
 ./create-react-app.sh resource_group plan_name app_name repo_url db_username db_password
 ```
 
-A sample repo to use with the script is https://github.com/kenttoku/img-drive.
+A sample repo to use with the script is https://github.com/kenttoku/img-drive
